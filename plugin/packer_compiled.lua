@@ -119,6 +119,11 @@ _G.packer_plugins = {
     path = "/Users/ala4be/.local/share/nvim/site/pack/packer/start/friendly-snippets",
     url = "https://github.com/rafamadriz/friendly-snippets"
   },
+  ["hop.nvim"] = {
+    loaded = true,
+    path = "/Users/ala4be/.local/share/nvim/site/pack/packer/start/hop.nvim",
+    url = "https://github.com/phaazon/hop.nvim"
+  },
   ["indent-blankline.nvim"] = {
     loaded = true,
     path = "/Users/ala4be/.local/share/nvim/site/pack/packer/start/indent-blankline.nvim",
@@ -183,6 +188,11 @@ _G.packer_plugins = {
     loaded = true,
     path = "/Users/ala4be/.local/share/nvim/site/pack/packer/start/nvim-treesitter",
     url = "https://github.com/nvim-treesitter/nvim-treesitter"
+  },
+  ["nvim-treesitter-textobjects"] = {
+    loaded = true,
+    path = "/Users/ala4be/.local/share/nvim/site/pack/packer/start/nvim-treesitter-textobjects",
+    url = "https://github.com/nvim-treesitter/nvim-treesitter-textobjects"
   },
   ["nvim-web-devicons"] = {
     loaded = true,

@@ -25,6 +25,20 @@ key_mapper('', '<down>', '<nop>')
 key_mapper('', '<left>', '<nop>')
 key_mapper('', '<right>', '<nop>')
 
+-- Fixing system clipboard
+  vim.cmd([[
+  " " Copy to clipboard
+  vnoremap  <leader>y  "+y
+  nnoremap  <leader>Y  "+yg_
+  nnoremap  <leader>y  "+y
+  nnoremap  <leader>yy  "+yy
+  " " Paste from clipboard
+  nnoremap <leader>p "+p
+  nnoremap <leader>P "+P
+  vnoremap <leader>p "+p
+  vnoremap <leader>P "+P
+  ]])
+
 -- Nvim Tree
 key_mapper("n", "<leader>nt", ":NvimTreeToggle<CR>")
 
@@ -53,6 +67,10 @@ key_mapper("n", "<leader>fg", "<CMD>lua require('telescope.builtin').live_grep()
 key_mapper("n", "<leader>fb", "<CMD>lua require('telescope.builtin').buffers()<CR>")
 key_mapper("n", "<leader>fh", "<CMD>lua require('telescope.builtin').help_tags()<CR>")
 
+-- Hop
+key_mapper("n", "HH", ":HopLineStart<cr>")
+key_mapper("n", "HF", ":HopPattern<cr>")
+key_mapper("n", "HL", ":HopWordCurrentLine<cr>")
 
 -- Fix common typos
 vim.cmd([[
@@ -90,17 +108,78 @@ api.nvim_set_keymap("n", "<C-s>", ":w<CR>", {noremap = true})
 -- Mason 
 require("mason").setup()
 
--- Treesitter 
+
+ -- Treesitter Textobject
 require'nvim-treesitter.configs'.setup {
-  -- A list of parser names, or "all"
-  ensure_installed = { "c", "lua", "rust", "lua" },
+  textobjects = {
+    select = {
+      enable = true,
 
-  -- Install parsers synchronously (only applied to `ensure_installed`)
-  sync_install = false,
+      -- Automatically jump forward to textobj, similar to targets.vim
+      lookahead = true,
 
-  -- Automatically install missing parsers when entering buffer
-  -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-  auto_install = true,
+      keymaps = {
+        -- You can use the capture groups defined in textobjects.scm
+        ["af"] = "@function.outer",
+        ["if"] = "@function.inner",
+        ["ac"] = "@class.outer",
+        -- You can optionally set descriptions to the mappings (used in the desc parameter of
+        -- nvim_buf_set_keymap) which plugins like which-key display
+        ["ic"] = { query = "@class.inner", desc = "Select inner part of a class region" },
+      },
+      -- You can choose the select mode (default is charwise 'v')
+      --
+      -- Can also be a function which gets passed a table with the keys
+      -- * query_string: eg '@function.inner'
+      -- * method: eg 'v' or 'o'
+      -- and should return the mode ('v', 'V', or '<c-v>') or a table
+      -- mapping query_strings to modes.
+      selection_modes = {
+        ['@parameter.outer'] = 'v', -- charwise
+        ['@function.outer'] = 'V', -- linewise
+        ['@class.outer'] = '<c-v>', -- blockwise
+      },
+      -- If you set this to `true` (default is `false`) then any textobject is
+      -- extended to include preceding or succeeding whitespace. Succeeding
+      -- whitespace has priority in order to act similarly to eg the built-in
+      -- `ap`.
+      --
+      -- Can also be a function which gets passed a table with the keys
+      -- * query_string: eg '@function.inner'
+      -- * selection_mode: eg 'v'
+      -- and should return true of false
+      include_surrounding_whitespace = true,
+    },
+    move = {
+      enable = true,
+      set_jumps = true, -- whether to set jumps in the jumplist
+      goto_next_start = {
+        ["ff"] = "@function.outer",
+        ["cc"] = { query = "@class.outer", desc = "Next class start" },
+      },
+      goto_next_end = {
+        ["nf"] = "@function.outer",
+        ["nc"] = "@class.outer",
+      },
+      goto_previous_start = {
+        ["pf"] = "@function.outer",
+        ["pc"] = "@class.outer",
+      },
+      goto_previous_end = {
+        ["pF"] = "@function.outer",
+        ["pC"] = "@class.outer",
+      },
+    },
+    lsp_interop = {
+      enable = true,
+      border = 'double',
+      floating_preview_opts = {},
+      peek_definition_code = {
+        ["<leader>df"] = "@function.outer",
+        ["<leader>dF"] = "@class.outer",
+      },
+    },
+  },
 }
 
 -- Toolbar 
@@ -122,6 +201,11 @@ require("trouble").setup {
     position = "right"
 }
 
+-- Hop
+require 'hop'.setup {
+    keys = 'etovxqpdygfblzhckisuran',
+    jump_on_sole_occurrence = false,
+}
 
 -- Auto Complete 
 -- Completion
@@ -218,9 +302,36 @@ local on_attach = function(client, bufnr)
   require "lsp_signature".on_attach({
     doc_lines = 0,
     handler_opts = {
-      border = "none"
+      border = "double"
     },
   })
+  -- Treesitter 
+ require('nvim-treesitter.configs').setup {
+  -- A list of parser names, or "all"
+  ensure_installed = { "c", "lua", "rust", "lua" },
+
+  -- Install parsers synchronously (only applied to `ensure_installed`)
+  sync_install = false,
+
+  -- Automatically install missing parsers when entering buffer
+  -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
+  auto_install = true,
+
+  incremental_selection = {
+    enable = true,
+    keymaps = {
+        init_selection = "<CR>",
+		node_incremental = "<CR>",
+		scope_incremental = "<Tab>",
+		node_decremental = "<S-Tab>",  
+    },
+  },
+  indent = {
+    enable = true
+  }
+}
+
+
 
 end
 
@@ -346,6 +457,7 @@ require('packer').startup(function(use)
   -- LSP 
   use 'neovim/nvim-lspconfig'
   use "https://git.sr.ht/~whynothugo/lsp_lines.nvim"
+  use 'nvim-treesitter/nvim-treesitter-textobjects'
   -- Tree 
   use 'nvim-tree/nvim-tree.lua'
   use 'simrat39/rust-tools.nvim'
@@ -363,6 +475,7 @@ require('packer').startup(function(use)
   use "lukas-reineke/indent-blankline.nvim"
   -- Comment
   use 'numToStr/Comment.nvim'
+  use {'phaazon/hop.nvim',branch = 'v2'}
   -- Autocompletion
   use 'hrsh7th/nvim-cmp'
   use 'hrsh7th/cmp-buffer'
